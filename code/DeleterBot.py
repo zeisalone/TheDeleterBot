@@ -28,7 +28,7 @@ async def on_message(message):
             await message.delete()
 
 async def delete_existing_mudae_messages(channel):
-    async for msg in channel.history(limit=None): 
+    async for msg in channel.history(limit=None):
         if msg.content.startswith('$') and msg.author.name != MUDAE_BOT_NAME:
             await msg.delete()
 
