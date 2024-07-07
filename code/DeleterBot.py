@@ -10,12 +10,14 @@ KARUTA_BOT_NAME = 'Karuta'
 DELETE_MUDAE_COMMAND = '/delmudaebloat'
 DELETE_KARUTA_COMMAND = '/delkarutabloat'
 DELETE_EXPIRED_COMMAND = '/deleteexpired'
+ADD_BLOAT_COMMAND = ''
 HELP_COMMAND = '/helpdeleter'
 delete_mudae_bloat = False
 delete_karuta_bloat = False
+additional_bloat_words = []
 @client.event
 async def on_message(message):
-    global delete_mudae_bloat, delete_karuta_bloat
+    global delete_mudae_bloat, delete_karuta_bloat, additional_bloat_words
 
     if message.author == client.user:
         return
@@ -36,18 +38,26 @@ async def on_message(message):
     if message.content.startswith(DELETE_EXPIRED_COMMAND):
         await delete_expired_karuta_messages(message.channel)
         return
+    if message.content.startswith(ADD_BLOAT_COMMAND):
+        new_bloat_word = message.content[len(ADD_BLOAT_COMMAND):].strip()
+        if new_bloat_word:
+            additional_bloat_words.append(new_bloat_word)
+            await message.channel.send(f"Added '{new_bloat_word}' to the bloat list.")
+        else:
+            await message.channel.send("Please provide a word to add.")
+        return
     if message.content.startswith(HELP_COMMAND):
         help_message = (
             "**DeleterBot Commands**\n"
-            f"{DELETE_MUDAE_COMMAND} - Enables/disables the deletion of spam messages from Mudae.\n"
+            f"```{DELETE_MUDAE_COMMAND} - Enables/disables the deletion of spam messages from Mudae.\n"
             f"{DELETE_KARUTA_COMMAND} - Enables/disables the deletion of 'K!D' commands from users.\n"
             f"{DELETE_EXPIRED_COMMAND} - Deletes all expired messages from Karuta.\n"
-            f"{HELP_COMMAND} - Shows this help message.\n"
+            f"{ADD_BLOAT_COMMAND} <word> - Adds a word to the list of messages to be deleted.```"
         )
         await message.channel.send(help_message)
         return
     if delete_mudae_bloat:
-        if message.content.startswith('$') and message.author.name != MUDAE_BOT_NAME:
+        if (message.content.startswith('$') or any(word in message.content for word in additional_bloat_words)) and message.author.name != MUDAE_BOT_NAME:
             await message.delete()
     if delete_karuta_bloat:
         if message.content.lower().startswith('k!d') and message.author.name != KARUTA_BOT_NAME:
@@ -56,7 +66,7 @@ async def on_message(message):
 @client.event
 async def on_message_edit(before, after):
     if "this drop has expired and the cards can no longer be grabbed." in after.content.lower():
-        async for msg in after.channel.history(limit=100):
+        async for msg in after.channel.history(limit=100):  # Limite para evitar busca intensa
             if msg.author.name == KARUTA_BOT_NAME and msg.content.lower().startswith('k!d'):
                 await msg.delete()
                 break
