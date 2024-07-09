@@ -35,10 +35,25 @@ async def deleteexpired(interaction: discord.Interaction):
     await delete_expired_karuta_messages(interaction.channel)
     await interaction.response.send_message("Deleted all expired messages from Karuta.", ephemeral=True)
 
-@tree.command(name="addbloat", description="Adds a word to the list of messages to be deleted.")
-async def addbloat(interaction: discord.Interaction, word: str):
-    additional_bloat_words.append(word)
-    await interaction.response.send_message(f"Added '{word}' to the bloat list.", ephemeral=True)
+@tree.command(name="banword", description="Adds a word to the list of messages to be deleted.")
+async def banword(interaction: discord.Interaction, word: str):
+    if word in additional_bloat_words:
+        await interaction.response.send_message(f"ERROR: '{word}' is already in the banned list.", ephemeral=True)
+    elif len(additional_bloat_words) >= 50:
+        await interaction.response.send_message("ERROR: Cannot add more than 50 words to the banned list.", ephemeral=True)
+    else:
+        additional_bloat_words.append(word)
+        await interaction.response.send_message(f"Added '{word}' to the banned list.", ephemeral=True)
+
+@tree.command(name="showbanlist", description="Shows the words that have been banned.")
+async def showbanlist(interaction: discord.Interaction):
+    if not additional_bloat_words:
+        embed = discord.Embed(title="Banned Words", description="No banned words.", color=discord.Color.red())
+    else:
+        words = "\n".join(additional_bloat_words[:50])
+        embed = discord.Embed(title="Banned Words", description=words, color=discord.Color.red())
+
+    await interaction.response.send_message(embed=embed, ephemeral=True)
 
 @tree.command(name="helpdeleter", description="Shows this help message.")
 async def helpdeleter(interaction: discord.Interaction):
@@ -47,7 +62,8 @@ async def helpdeleter(interaction: discord.Interaction):
         f"```/delmudaebloat - Enables/disables the deletion of spam messages from Mudae.\n"
         f"/delkarutabloat - Enables/disables the deletion of 'K!D' commands from users.\n"
         f"/deleteexpired - Deletes all expired messages from Karuta.\n"
-        f"/addbloat <word> - Adds a word to the list of messages to be deleted.\n"
+        f"/banword <word> - Adds a word to the list of messages to be deleted.\n"
+        f"/showbanlist - Shows the list of banned words.\n"
         f"/helpdeleter - Shows this help message.```"
     )
     await interaction.response.send_message(help_message, ephemeral=True)
