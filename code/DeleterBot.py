@@ -37,12 +37,13 @@ async def deleteexpired(interaction: discord.Interaction):
 
 @tree.command(name="banword", description="Adds a word to the list of messages to be deleted.")
 async def banword(interaction: discord.Interaction, word: str):
-    if word in additional_bloat_words:
+    lower_word = word.lower()
+    if lower_word in additional_bloat_words:
         await interaction.response.send_message(f"ERROR: '{word}' is already in the banned list.", ephemeral=True)
     elif len(additional_bloat_words) >= 50:
         await interaction.response.send_message("ERROR: Cannot add more than 50 words to the banned list.", ephemeral=True)
     else:
-        additional_bloat_words.append(word)
+        additional_bloat_words.append(lower_word)
         await interaction.response.send_message(f"Added '{word}' to the banned list.", ephemeral=True)
 
 @tree.command(name="showbanlist", description="Shows the words that have been banned.")
@@ -51,7 +52,11 @@ async def showbanlist(interaction: discord.Interaction):
         embed = discord.Embed(title="Banned Words", description="No banned words.", color=discord.Color.red())
     else:
         words = "\n".join(additional_bloat_words[:50])
-        embed = discord.Embed(title="Banned Words", description=words, color=discord.Color.red())
+        embed = discord.Embed(
+            title="Banned Words",
+            description=f"**{len(additional_bloat_words)}/50**\n\n{words}",
+            color=discord.Color.red()
+        )
 
     await interaction.response.send_message(embed=embed, ephemeral=True)
 
@@ -74,13 +79,12 @@ async def on_message(message):
 
     if message.author == client.user:
         return
-
+    lower_content = message.content.lower()
     if delete_mudae_bloat:
-        if (message.content.startswith('$') or any(word in message.content for word in additional_bloat_words)) and message.author.name != MUDAE_BOT_NAME:
+        if (lower_content.startswith('$') or any(word in lower_content for word in additional_bloat_words)) and message.author.name != MUDAE_BOT_NAME:
             await message.delete()
-
     if delete_karuta_bloat:
-        if message.content.lower().startswith('k!d') and message.author.name != KARUTA_BOT_NAME:
+        if lower_content.startswith('k!d') and message.author.name != KARUTA_BOT_NAME:
             await message.delete()
 
 @client.event
