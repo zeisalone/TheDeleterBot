@@ -1,5 +1,7 @@
 import discord
 from discord.ext import commands
+import json
+import os
 
 intents = discord.Intents.default()
 intents.message_content = True
@@ -12,6 +14,22 @@ delete_mudae_bloat = False
 delete_karuta_bloat = False
 additional_bloat_words = []
 
+BANWORDS_FILE = 'banwords/banwords.json'
+
+def load_banwords():
+    if os.path.exists(BANWORDS_FILE):
+        try:
+            with open(BANWORDS_FILE, 'r') as f:
+                return json.load(f)
+        except json.JSONDecodeError:
+            return []
+    return []
+
+def save_banwords(words):
+    with open(BANWORDS_FILE, 'w') as f:
+        json.dump(words, f)
+
+additional_bloat_words = load_banwords()
 @tree.command(name="delmudaebloat", description="Enables/disables the deletion of spam messages from Mudae.")
 async def delmudaebloat(interaction: discord.Interaction):
     global delete_mudae_bloat
@@ -44,6 +62,7 @@ async def banword(interaction: discord.Interaction, word: str):
         await interaction.response.send_message("ERROR: Cannot add more than 50 words to the banned list.", ephemeral=True)
     else:
         additional_bloat_words.append(lower_word)
+        save_banwords(additional_bloat_words)
         await interaction.response.send_message(f"Added '{word}' to the banned list.", ephemeral=True)
 
 @tree.command(name="showbanlist", description="Shows the words that have been banned.")
